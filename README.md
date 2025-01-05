@@ -1,10 +1,10 @@
-# Unity - GlitchFun API Integration
+# Unity - Glitch Gaming API Integration
 
 This repository contains an example C# script for **Unity** that communicates with the GlitchFun API to record game installs. The code is located in the `/src/ApiClient.cs` file.
 
 ## Overview
 
-When a user installs and launches your Unity game, you can call the API to create a **"GameInstall"** record. This helps track installs, user devices, and platforms within your Laravel backend (at `https://api.glitch.fun/api/`).
+When a user installs and launches your Unity game, you can call the API to create a **"GameInstall"** record. This helps track installs, user devices, and platforms within your Glitch marketing funnel for your game.
 
 ## File Information
 
