@@ -31,3 +31,27 @@ StartCoroutine(
     apiClientInstance.CreateInstallRecord("TITLE_UUID", "DEVICE_UNIQUE_ID", "android")
 );
 ```
+- Replace "TITLE_UUID" with the actual Title ID from your GlitchFun system.
+- Replace "DEVICE_UNIQUE_ID" with your user’s or device’s unique ID (must be consistent within your game).
+- Replace "android" with the correct platform string (e.g. apple, steam, etc.).
+3. Check the Unity Console for success or error messages.
+
+```csharp
+public class ExampleUsage : MonoBehaviour
+{
+    public ApiClient apiClient;
+
+    void Start()
+    {
+        // Example usage after retrieving user's device ID or generating a random ID
+        StartCoroutine(apiClient.CreateInstallRecord("TITLE_UUID_HERE", "SomeUniqueDeviceID123", "android"));
+    }
+}
+
+```
+
+### Contributing
+Feel free to open issues or pull requests if you encounter bugs or want to add features.
+
+### License
+This sample code is provided under the MIT License. You’re free to use it in your Unity projects.
