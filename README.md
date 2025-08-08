@@ -134,6 +134,16 @@ private string CollectFingerprintData()
             language = Application.systemLanguage.ToString(),  
             timezone = "Unknown",  
             region   = "XX"  
+        }
+        // Only fill this out if you believe you’re running on a desktop PC (e.g., Windows, Mac)  
+        // (system checks can vary — you might do a check if "SystemInfo.deviceType == DeviceType.Desktop")  
+        desktop_data = new DesktopData  
+        {  
+            formFactors     = new string[] { "Desktop" },  
+            architecture    = "x86",          // Or "arm"  
+            bitness         = "64",           // If you know user is 64-bit  
+            platformVersion = "10.0.22621",   // Example Windows 11 build  
+            wow64           = false           // Example: is this a 32-bit process on 64-bit OS?  
         }  
     };  
   
