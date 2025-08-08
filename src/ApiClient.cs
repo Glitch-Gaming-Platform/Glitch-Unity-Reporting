@@ -174,7 +174,8 @@ public class FingerprintComponents
     public OSInfo os;  
     public DisplayInfo display;  
     public HardwareInfo hardware;  
-    public EnvironmentInfo environment;  
+    public EnvironmentInfo environment;
+    public DesktopData desktop_data; 
 }  
   
 [System.Serializable]  
@@ -214,4 +215,14 @@ public class EnvironmentInfo
     public string language;  
     public string timezone;  
     public string region;  
+} 
+
+[System.Serializable]  
+public class DesktopData  
+{  
+    public string[] formFactors;       // e.g. ["Desktop"]  
+    public string architecture;        // e.g. "x86" or "arm"  
+    public string bitness;            // e.g. "64" if 64-bit  
+    public string platformVersion;     // e.g. "10.0.22621" for Windows 11 build  
+    public bool wow64;                // e.g. true if 32-bit process on 64-bit OS  
 }  
