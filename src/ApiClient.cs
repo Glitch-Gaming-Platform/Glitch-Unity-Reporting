@@ -160,7 +160,141 @@ public class ApiClient : MonoBehaviour
                 Debug.LogError("Error creating purchase record: " + request.error);  
             }  
         }  
-    }  
+    } 
+
+    // --- 1. AEGIS DRM & HANDSHAKE ---
+
+    /// <summary>
+    /// Validates if the current player has a valid license to play.
+    /// Call this on the first frame of your game.
+    /// </summary>
+    public IEnumerator ValidateInstall(string titleId, string installId, Action<bool, string> callback)
+    {
+        string endpoint = $"{baseUrl}titles/{titleId}/installs/{installId}/validate";
+
+        using (UnityWebRequest request = UnityWebRequest.Post(endpoint, ""))
+        {
+            request.SetRequestHeader("Authorization", "Bearer " + authToken);
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                // You can parse the JSON here to get user_name or license_type if needed
+                callback?.Invoke(true, request.downloadHandler.text);
+            }
+            else
+            {
+                Debug.LogError("Aegis Handshake Failed: " + request.downloadHandler.text);
+                callback?.Invoke(false, request.error);
+            }
+        }
+    }
+
+    // --- 2. CLOUD SAVE SYSTEM ---
+
+    /// <summary>
+    /// Retrieves all save slots for the current player.
+    /// </summary>
+    public IEnumerator ListCloudSaves(string titleId, string installId, Action<string> callback)
+    {
+        string endpoint = $"{baseUrl}titles/{titleId}/installs/{installId}/saves";
+
+        using (UnityWebRequest request = UnityWebRequest.Get(endpoint))
+        {
+            request.SetRequestHeader("Authorization", "Bearer " + authToken);
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                callback?.Invoke(request.downloadHandler.text);
+            }
+            else
+            {
+                Debug.LogError("Error listing cloud saves: " + request.error);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Uploads game progress to a specific slot.
+    /// Handles binary data by converting to Base64 and generating a SHA-256 checksum.
+    /// </summary>
+    public IEnumerator StoreCloudSave(string titleId, string installId, int slotIndex, byte[] rawData, int baseVersion, string saveType = "manual", string metadataJson = "{}")
+    {
+        string endpoint = $"{baseUrl}titles/{titleId}/installs/{installId}/saves";
+
+        string base64Payload = Convert.ToBase64String(rawData);
+        string checksum = CalculateSHA256(rawData);
+
+        // Construct JSON manually to avoid external dependencies, or use JsonUtility with a wrapper class
+        string jsonBody = $@"{{
+            ""slot_index"": {slotIndex},
+            ""payload"": ""{base64Payload}"",
+            ""checksum"": ""{checksum}"",
+            ""base_version"": {baseVersion},
+            ""save_type"": ""{saveType}"",
+            ""client_timestamp"": ""{DateTime.UtcNow:o}"",
+            ""metadata"": {metadataJson}
+        }}";
+
+        using (UnityWebRequest request = CreateJsonPostRequest(endpoint, jsonBody))
+        {
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                Debug.Log("Cloud Save Successful: " + request.downloadHandler.text);
+            }
+            else if (request.responseCode == 409)
+            {
+                Debug.LogWarning("Cloud Save Conflict Detected! A newer version exists on the server.");
+                // Here you would trigger your in-game Conflict Resolution UI
+            }
+            else
+            {
+                Debug.LogError("Cloud Save Error: " + request.downloadHandler.text);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Resolves a version conflict by choosing between 'keep_server' or 'use_client'.
+    /// </summary>
+    public IEnumerator ResolveSaveConflict(string titleId, string installId, string saveId, string conflictId, string choice)
+    {
+        string endpoint = $"{baseUrl}titles/{titleId}/installs/{installId}/saves/{saveId}/resolve";
+        string jsonBody = $"{{\"conflict_id\": \"{conflictId}\", \"choice\": \"{choice}\"}}";
+
+        using (UnityWebRequest request = CreateJsonPostRequest(endpoint, jsonBody))
+        {
+            yield return request.SendWebRequest();
+            if (request.result == UnityWebRequest.Result.Success)
+                Debug.Log("Conflict Resolved: " + choice);
+        }
+    }
+
+    // --- HELPERS ---
+    private UnityWebRequest CreateJsonPostRequest(string url, string json)
+    {
+        UnityWebRequest request = new UnityWebRequest(url, "POST");
+        byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
+        request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.SetRequestHeader("Content-Type", "application/json");
+        request.SetRequestHeader("Authorization", "Bearer " + authToken);
+        return request;
+    }
+
+    private string CalculateSHA256(byte[] data)
+    {
+        using (SHA256 sha256 = SHA256.Create())
+        {
+            byte[] hashBytes = sha256.ComputeHash(data);
+            StringBuilder sb = new StringBuilder();
+            foreach (byte b in hashBytes) sb.Append(b.ToString("x2"));
+            return sb.ToString();
+        }
+    }
 }  
   
 /// <summary>  
